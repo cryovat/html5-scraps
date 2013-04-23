@@ -1,12 +1,10 @@
 HTML5 scraps
 ============
 
-This repository holds various HTML5-related scraps
+This repository holds various HTML5-related scraps written
+after midnight throughout the years.
 
 * **License:** [Public Domain](COPYING)
-
-Contents
---------
-
- * adventure-game-thing (~dec 2010) - Point and click game prototype
- * kana (~feb 2011) - HTML5 hiragana practice game mockup
+* **Contents:**
+   * [adventure-game-thing](adventure-game-thing) - Point and click game mockup (~dec 2010) 
+   * [kana](kana) - HTML5 hiragana practice game mockup (~feb 2011)
