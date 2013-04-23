@@ -1,0 +1,326 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+      "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<title>Extravagant Wonderful Kana game</title>
+<meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+
+<style type="text/css">
+
+body {
+	background: #EEEEEE;
+	padding: 1em;
+	font-family: 'Droid Sans', arial, serif;
+        font-size: 0.75em;
+	color: �#999;
+	text-align: center;
+}
+
+a {
+	color: #999;
+}
+ 
+canvas {
+	background-color: white;
+	border: 1px solid #BBBBBB; 
+	-webkit-box-shadow: 0.25em 0.25em 0.25em #DDD;
+	-moz-box-shadow: 0.25em 0.25em 0.25em #DDD;
+	box-shadow: 0.25em 0.25em 0.25em #DDD"
+}
+ 
+p {
+	text-align: center;
+}
+ 
+ul {
+	margin: 0 auto;
+}
+ 
+ul {
+	display: inline;
+	margin: 0;
+	padding: 0;
+}
+ 
+li {
+	display: inline;
+	margin: 0;
+	padding: 0.5em;
+}
+ 
+#links {
+	text-align: center;
+}
+
+</style>
+
+<script type="text/javascript">
+
+var kana = [{k: "こ", r: "ko"}, {k: "ん", r: "n"}, {k: "に", r: "ni"}, {k: "ち", r: "chi"}, {k: "は", r: "ha"}];
+
+var elem = null;
+var context = null;
+var uifont = "bold 16px Arial"
+var kanafont = "bold 32px Arial";
+var suckfont = "bold 64px Arial";
+var smfont = "12px Arial"
+var score = 0;
+var stream = new KanaStream();
+var currentInput = "";
+var timer = 100;
+var speed = 0.25;
+var state;
+var background = new Image();
+background.onload = function() {
+   GameState.Current = GameState.GAME;
+}
+background.src = "kyoto.jpg";
+
+function GameState() {
+
+}
+
+GameState.LOADING = 0;
+GameState.MENU = 1;
+GameState.GAME = 2;
+GameState.FAILURE = 3;
+GameState.Current = GameState.LOADING;
+
+function StreamItem(kana) {
+
+   this.kana = kana;
+   this.next = null;
+   this.offset = 0;
+
+   context.font = kanafont;
+   this.offset = context.measureText(this.kana.k).width
+
+   this.draw = function(acc, y) {
+
+      drawText(kana.k, "black", acc, y, "bottom", "left", kanafont);
+
+      if (this.next)
+         this.next.draw(acc + this.offset, y);
+
+   }
+
+   this.append = function(item) {
+
+      if (!this.next)
+      {
+         this.next = item;
+      }
+      else
+      {
+         this.next.append(item);
+      }
+
+   }
+
+}
+
+function KanaStream() {
+
+   this.head = null;
+   this.offset = 10;
+
+   this.addRandom = function(a, count) {
+
+      if (!count)
+         count = 1;
+
+      for (var i = 0; i < count; i++)
+      {
+         this.addKana(a[Math.floor(Math.random()*a.length)]);
+      }
+
+   }
+   
+   this.addKana = function(kana) {
+
+      var item = new StreamItem(kana, 10, 10);
+
+      if (this.head)
+      {
+         this.head.append(item);
+      }
+      else
+      {
+         this.head = item;
+      }
+
+   }
+
+   this.draw = function() {
+
+      if (this.head)
+         this.head.draw(this.offset, 350);
+
+   }
+
+   this.removeFirst = function() {
+
+      if (this.head)
+      {
+         this.head = this.head.next;
+      }
+
+   }
+
+}
+
+function clear(color) {
+
+   context.fillStyle = (color) ? color : "#DDDDDD";
+   context.fillRect(0, 0, 640, 480);
+}
+
+function drawText(text, color, x, y, baseline, align, font) {
+
+   if (font)
+   {
+      context.font = font;
+   }
+   else
+   {
+      context.font = uifont;
+   }
+
+   context.fillStyle = color;
+   context.textAlign = align;
+   context.textBaseline = baseline;
+   context.fillText(text, x, y);
+
+}
+
+function drawBg() {
+
+   context.drawImage(background, 0, 0, 640, 480);
+
+   context.fillStyle = "rgba(255,255,255,0.75)";
+   context.fillRect(0, 300, 640, 75);
+
+   context.fillStyle = "#AADDDD";
+   context.fillRect(0, 354, Math.floor((timer / 100) * 640), 16);
+
+   context.fillStyle = "black";
+   context.fillRect(0, 350, 640, 4);
+   context.fillRect(100, 350, 2, 20);
+   context.fillRect(300, 350, 2, 20);
+
+   context.fillStyle = "red";
+   context.fillRect(0, 351, 100, 2);
+
+   context.fillStyle = "yellow";
+   context.fillRect(102, 351, 198, 2);
+}
+
+function drawLoading() {
+
+   drawText("Loading...", "black", 10, 10, "top", "left");
+
+}
+
+function drawHud() {
+
+   drawText(score, "#000000", 630, 355, "top", "right");
+   drawText("danger", "black", 5, 355, "top", "left", smfont);
+   drawText("warning", "black", 107, 355, "top", "left", smfont);
+   drawText(currentInput, "black", 307, 355, "top", "left", smfont);
+
+   stream.draw();
+}
+
+function drawSuck() {
+
+   clear("red");
+   drawText("YOU SUCK", "white", 320, 240, "middle", "center", suckfont);
+
+}
+
+function draw() {
+
+   timer -= speed;
+
+   clear();
+
+   if (GameState.Current == GameState.LOADING)
+   {
+      drawLoading();
+   }
+   else if (GameState.Current == GameState.GAME)
+   {
+      if (timer >= 0)
+      {
+         drawBg();
+         drawHud();
+      }
+      else
+      {
+         GameState.Current = GameState.FAILURE;
+      }
+   }
+   else if (GameState.Current == GameState.FAILURE)
+   {
+      drawSuck();
+   }
+}
+
+function input(e) {
+
+   currentInput += String.fromCharCode(e.charCode);
+
+   if (stream.head) {
+      if (stream.head.kana.r.indexOf(currentInput) == 0)
+      {
+         if (currentInput == stream.head.kana.r)
+         {
+            stream.removeFirst();
+            stream.addRandom(kana);
+            timer = Math.min(timer + 5, 100);
+            score += 1;
+            speed += 0.01;
+            currentInput = "";
+         }
+      }
+      else
+      {
+         currentInput = "";
+      }
+   }
+
+
+}
+
+window.addEventListener('load', function() {
+   elem = document.getElementById('myCanvas');
+   if (elem && elem.getContext) {
+
+      document.addEventListener('keypress', input);
+
+      context = elem.getContext('2d');
+      if (context) {
+         stream.addRandom(kana, 20);
+         stream.failure = function() { alert("YOU SUCK"); };
+         context.font = 'bold 16px Arial';
+         setInterval(draw, 1000 / 30);
+      }
+   }
+   }, false); 
+
+</script>
+
+</head>
+
+<body>
+
+<canvas width="640" height="480" id="myCanvas">
+Boo, your browser sucks! :(
+</canvas>
+
+</body>
+</html>
+
